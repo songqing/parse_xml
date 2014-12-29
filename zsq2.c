@@ -11,8 +11,9 @@
 #include<semaphore.h>
 #define BUFLEN 1024000
 #define BCSLEN 50000
+typedef unsigned long long ull;
 char filename[]="test.xml";
-int bufnummber = 1;
+ull bufnummber = 1ULL;
 FILE *fp;
 
 
@@ -26,23 +27,24 @@ typedef enum Bcstype{
 } Bcstype;
 
 typedef struct bcs_t{
-     int fileoffset;
-     int bufnum;
-     int bufpos;
+     ull fileoffset;
+     ull bufnum;
+     ull bufpos;
      Bcstype bt;
 }Bcs;
 
 typedef struct Bcsarray_t{
 	Bcs bcs[BCSLEN];
-	int bcsmax;
+	ull bcsmax;
 }Bcsarray;
 
 
 
 typedef struct Buffer_t{
+	pthread_mutex_t lock;
 	char buf[BUFLEN];
 	Bcsarray  bcsay;
-	int bufnum;
+	ull bufnum;
 	int FINISH_STAGE1;
 	int FINISH_STAGE2;
 	int FINISH_STAGE3;
@@ -63,17 +65,16 @@ int bufferprint(Buffer * c);	//输出buffer中第一阶段'<'位置
 
 void* handle1(void* args);  //线程1，解析ｘｍｌ文件
 void* handle2(void* args);
-void* handle3(void* args);
+//void* handle3(void* args);
 pthread_t phandl1,phandl2;
 
-Buffer *start,*p1,*p2;
+Buffer *start,*p,*p1,*p2;
 
 int main(){
-	int i;
-	
 //	printf("input the file name!\n");
 //	gets(filename);
 	p1=p2=NULL;	
+	//p=NULL;
 	start = Bufferinit();	// 第0阶段，将XML文件分块读入
 	p1 = start;
 	if(p1!=NULL && p1->next!=NULL)
@@ -88,7 +89,7 @@ int main(){
 		p=p->next;
 	}
 */
-/*	
+	
 	int arg;
 	arg=1;
 	pthread_create(&phandl1,NULL,(void*)handle1,(void*)&arg);
@@ -100,22 +101,24 @@ int main(){
 	pthread_join(phandl2,NULL);
 //	pthread_join(phandl3,NULL);
 	//exit(1);
-*/	
+	
 	//输出buffer中第一阶段'<'位置
 
-	p1 = start;
+	ull i;
+	p = start;
 	for(i=1;i<=bufnummber;i++){
-		bufferprint(p1);
-		p1=p1->next;
+		bufferprint(p);
+		p=p->next;
 	}
 
 	exit(1);
 
 }
+  //handle1线程解析奇数号的数据块Buffer
 void* handle1(void* args)
 {
-	int t=*((int*)args);
-	int i;
+//	int t=*((int*)args);
+	ull i;
 	for(i=1;i<=bufnummber;i+=2)
 	{
 		identify(p1);
@@ -124,10 +127,10 @@ void* handle1(void* args)
 	}
 
 }
-
+//handle2线程解析偶数号的Buffer
 void* handle2(void* args)
 {
-	int i;
+	ull i;
 	for(i=2;i<=bufnummber;i+=2)
 	{
 		identify(p2);
@@ -135,6 +138,7 @@ void* handle2(void* args)
 			p2=p2->next->next;
 	}
 }
+
 /*
 void* handle3(void* args)
 {
@@ -164,7 +168,7 @@ int read(char *name,Buffer *buffer){
 */
 
 Buffer *Bufferinit(){		// 第0阶段，将XML文件分块读入
-	int i;
+	ull i;
 	int readst;
 	Buffer *p,*q,*pl;
 	
@@ -173,48 +177,61 @@ Buffer *Bufferinit(){		// 第0阶段，将XML文件分块读入
 		return NULL;
 	}
 	
-	p = (Buffer *)malloc(sizeof(Buffer));
-	//readst = read(filename,p);
-	readst = fread(p->buf,BUFLEN,1,fp);  //将fputc()函数改为fread()函数，运行效率大大提高
-	p->bufnum = bufnummber++;
-	p->FINISH_STAGE1 = 0;	// 1阶段未完成
-	p->FINISH_STAGE2 = 0;
-	p->FINISH_STAGE3 = 0;
-	p->START_STAGE2 = 0;
-	p->START_STAGE3 = 0;
-	p->next = NULL;
-	
-	//printf("the first buffer read completed!\n");
-//	printf("bufnummber %d\n",bufnummber);
-	pl = p;
-	while( readst>0 ){
-		q = (Buffer *)malloc(sizeof(Buffer));
-	//	readst = read(filename,q);
-		readst = fread(p->buf,BUFLEN,1,fp);
-		q->bufnum = bufnummber++;
-		q->FINISH_STAGE1 = 0;	// 表示1阶段未完成
-		q->FINISH_STAGE2 = 0;
-		q->FINISH_STAGE3 = 0;
-		q->START_STAGE2 = 0;
-		q->START_STAGE3 = 0;
-	/*	
-		for(i=1;i<bufnummber-2;i++){
-			pl=pl->next;
+	if((p = (Buffer *)malloc(sizeof(Buffer)))!=NULL)
+	{
+		//readst = read(filename,p);
+		readst = fread(p->buf,BUFLEN,1,fp);  //将fputc()函数改为fread()函数，运行效率大大提高
+		p->bufnum = bufnummber++;
+		p->FINISH_STAGE1 = 0;	// 1阶段未完成
+		p->FINISH_STAGE2 = 0;
+		p->FINISH_STAGE3 = 0;
+		p->START_STAGE2 = 0;
+		p->START_STAGE3 = 0;
+		p->next = NULL;
+		if(pthread_mutex_init(&p->lock,NULL)!=0)
+		{
+			free(p);
+			return NULL;
 		}
-		*/
-		pl->next = q;
-		pl=q;
-		q->next = NULL;
-//	printf("bufnummber %d\n",bufnummber);
+
+		//printf("the first buffer read completed!\n");
+		//	printf("bufnummber %d\n",bufnummber);
+		pl = p;
+		while( readst>0 ){
+			q = (Buffer *)malloc(sizeof(Buffer));
+			//	readst = read(filename,q);
+			readst = fread(q->buf,BUFLEN,1,fp);
+			q->bufnum = bufnummber++;
+			q->FINISH_STAGE1 = 0;	// 表示1阶段未完成
+			q->FINISH_STAGE2 = 0;
+			q->FINISH_STAGE3 = 0;
+			q->START_STAGE2 = 0;
+			q->START_STAGE3 = 0;
+			/*	
+				for(i=1;i<bufnummber-2;i++){
+				pl=pl->next;
+				}
+				*/
+			pl->next = q;
+			pl=q;
+			q->next = NULL;
+			if(pthread_mutex_init(&q->lock,NULL)!=0)
+			{
+				free(q);
+				return NULL;
+			}
+			//	printf("bufnummber %d\n",bufnummber);
+		}
+		bufnummber--;
+		//	printf("bufnummber=%d\n",bufnummber);
+
 	}
-	bufnummber--;
-//	printf("bufnummber=%d\n",bufnummber);
 	return p;
 }
 
 
 int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
-	int i,j,n=1;
+	ull i,j,n=1ULL;
 	int st ;
 	for(i=0;i<BUFLEN;i++){
 		if(b->buf[i] == '<'){ 
@@ -326,16 +343,16 @@ int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
 		}
 	}
 	b->bcsay.bcsmax = --n;
-b->FINISH_STAGE1 = 1;	//修改FINISH_STAGE1，表示第一阶段结束
+	b->FINISH_STAGE1 = 1;	//修改FINISH_STAGE1，表示第一阶段结束
 	return 1;
 }
 
 
 int bufferprint(Buffer * c){	//输出buffer中第一阶段'<'位置
-	int i;
-	printf("the NO.%d buffer:\n",c->bufnum);
-	for(i=1;i<=c->bcsay.bcsmax;i++){
-		printf("the NO.%d < information:\n",i);
+	ull i;
+	printf("the NO.%lld buffer: number %lld\n",c->bufnum,c->bcsay.bcsmax);
+	for(i=1ULL;i<=c->bcsay.bcsmax;i++){
+		printf("the NO.%lld < information:\n",i);
 		switch(c->bcsay.bcs[i].bt){
 			case 0: printf("the type of this < is StagorEmptytag_start.\n");break;
 			case 1:	printf("the type of this < is Etag_start.\n");break;
@@ -344,8 +361,8 @@ int bufferprint(Buffer * c){	//输出buffer中第一阶段'<'位置
 			case 4:	printf("the type of this < is CDSECT_star.\n");break;
 			case 5:	printf("the type of this < is COMMENT_start.\n");break;
 		}
-		printf("the position is %d.\n",c->bcsay.bcs[i].bufpos);
-		printf("the offset is %d.\n",c->bcsay.bcs[i].fileoffset);
+		printf("the position is %lld.\n",c->bcsay.bcs[i].bufpos);
+		printf("the offset is %lld.\n",c->bcsay.bcs[i].fileoffset);
 		printf("\n");
 	}
 	return 1;
