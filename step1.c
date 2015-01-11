@@ -17,27 +17,27 @@ Buffer *step1buffer;
 int read_thread=0;
 int parse_thread=0;
 /*
-void* handle0(void* args)
-{
-	Bufferinit();	// 第0阶段，将XML文件分块读入
+   void* handle0(void* args)
+   {
+   Bufferinit();	// 第0阶段，将XML文件分块读入
 
-}
-*/
-  //handle1线程解析奇数号的数据块Buffer
+   }
+   */
+//handle1线程解析奇数号的数据块Buffer
 void* handle1(void* args)
 {
-//	int t=*((int*)args);
+	//	int t=*((int*)args);
 	ull i;
 	for(i=1;i<=bufnummber;i++)
-	//while(1)
+	  //while(1)
 	{
-//		sem_wait(&num_buffer_product);
-//		sem_wait(&mutex);
-//		printf("parse buffer %d\n",parse_thread++);
+		//		sem_wait(&num_buffer_product);
+		//		sem_wait(&mutex);
+		//		printf("parse buffer %d\n",parse_thread++);
 		identify(step1buffer);
 		step1buffer=step1buffer->next;
-//		sem_post(&mutex);
-//		sem_post(&num_buffer_consume);
+		//		sem_post(&mutex);
+		//		sem_post(&num_buffer_consume);
 	}
 	return ((void*)0);
 }
@@ -45,59 +45,47 @@ void* handle1(void* args)
 //handle2线程解析偶数号的Buffer
 void* handle2(void* args)
 {
-	ull i;
-	for(i=2;i<=bufnummber;i+=2)
-	{
-		identify(p2);
-		if(i+2<=bufnummber)
-			p2=p2->next->next;
-	}
-}
-*/
-/*
-void* handle3(void* args)
+ull i;
+for(i=2;i<=bufnummber;i+=2)
 {
-	int i;
-	for(i=3;i<=bufnummber;i+=3)
-	{
-		identify(p3);
-		if(i+3<bufnummber)
-			p3=p3->next->next->next;
-	}
+identify(p2);
+if(i+2<=bufnummber)
+p2=p2->next->next;
+}
 }
 */
 /*
-int read(char *name,Buffer *buffer){
-	char c;
-	int i=0;
+   int read(char *name,Buffer *buffer){
+   char c;
+   int i=0;
 
 
-	while((c=fgetc(fp)) != EOF && i<BUFLEN){
-		buffer->buf[i++]=c;
-	}
-	if(c==EOF)
-		return 0;
-	else 
-		return 1;
-}
-*/
+   while((c=fgetc(fp)) != EOF && i<BUFLEN){
+   buffer->buf[i++]=c;
+   }
+   if(c==EOF)
+   return 0;
+   else 
+   return 1;
+   }
+   */
 
 Buffer* Bufferinit(){		// 第0阶段，将XML文件分块读入
-//	ull i;
+	//	ull i;
 	int readst;
 	Buffer *p,*q,*pl;
-	
+
 	if((fp = fopen(filename,"r")) == NULL){
-		printf("error:cannot open the file.\n");
+		printf("error:cannot open the test.xml file.\n");
 		return NULL;
 	}
-	
+
 	if((p = (Buffer *)malloc(sizeof(Buffer)))!=NULL)
 	{
 		//申请一个资源
-//		sem_wait(&num_buffer_consume);
-//		//加锁
-//		sem_wait(&mutex);
+		//		sem_wait(&num_buffer_consume);
+		//		//加锁
+		//		sem_wait(&mutex);
 		//readst = read(filename,p);
 		readst = fread(p->buf,BUFLEN,1,fp);  //将fputc()函数改为fread()函数，运行效率大大提高
 		p->bufnum = bufnummber++;
@@ -108,29 +96,29 @@ Buffer* Bufferinit(){		// 第0阶段，将XML文件分块读入
 		p->START_STAGE2 = 0;
 		p->START_STAGE3 = 0;
 		p->next = NULL;
-//		if(pthread_mutex_init(&p->lock,NULL)!=0)
-//		{
-//			free(p);
-//			return NULL;
-//		}
+		//		if(pthread_mutex_init(&p->lock,NULL)!=0)
+		//		{
+		//			free(p);
+		//			return NULL;
+		//		}
 
 		//全局变量start,p1赋值
-	//	start=p1=p;
+		//	start=p1=p;
 		//printf("the first buffer read completed!\n");
 		//	printf("bufnummber %d\n",bufnummber);
 		pl = p;
-//		printf("read buffer %d\n",read_thread++);
+		//		printf("read buffer %d\n",read_thread++);
 		//解锁
-//		sem_post(&mutex);
+		//		sem_post(&mutex);
 		//读入一个缓冲区
-//		sem_post(&num_buffer_product);
-	//	sleep(1);
+		//		sem_post(&num_buffer_product);
+		//	sleep(1);
 		while( readst>0 ){
-			
+
 			//申请一个资源
-//			sem_wait(&num_buffer_consume);
+			//			sem_wait(&num_buffer_consume);
 			//加锁
-//			sem_wait(&mutex);
+			//			sem_wait(&mutex);
 			q = (Buffer *)malloc(sizeof(Buffer));
 			//	readst = read(filename,q);
 			readst = fread(q->buf,BUFLEN,1,fp);
@@ -149,17 +137,17 @@ Buffer* Bufferinit(){		// 第0阶段，将XML文件分块读入
 			pl->next = q;
 			pl=q;
 			q->next = NULL;
-//			if(pthread_mutex_init(&q->lock,NULL)!=0)
-//			{
-//				free(q);
-//				return NULL;
-//			}
+			//			if(pthread_mutex_init(&q->lock,NULL)!=0)
+			//			{
+			//				free(q);
+			//				return NULL;
+			//			}
 			//	printf("bufnummber %d\n",bufnummber);
-//			printf("read buffer %d\n",read_thread++);
+			//			printf("read buffer %d\n",read_thread++);
 			//解锁
-//			sem_post(&mutex);
+			//			sem_post(&mutex);
 			//读入一个缓冲区
-//			sem_post(&num_buffer_product);
+			//			sem_post(&num_buffer_product);
 		}
 		bufnummber--;
 		//	printf("bufnummber=%d\n",bufnummber);
@@ -170,7 +158,7 @@ Buffer* Bufferinit(){		// 第0阶段，将XML文件分块读入
 
 
 int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
-//	printf("buffer %lld\n",b->bufnum);
+	//	printf("buffer %lld\n",b->bufnum);
 	ull i=0ULL,j,n=1ULL;
 	int st ;
 	//将Buffer中第一个“<”之前的数据拷贝到上一个缓冲区中
@@ -178,15 +166,15 @@ int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
 	{
 		for(;i<BUFLEN;i++)
 		{
-//			if(b->buf[i]==' ' || b->buf[i]=='\t' || b->buf[i]=='\n')
-//			  continue;
+			//			if(b->buf[i]==' ' || b->buf[i]=='\t' || b->buf[i]=='\n')
+			//			  continue;
 			if(b->buf[i]=='<')
 			{
 				break;
 			}
 			if(b->buf[i]=='>')
 			{
-//				printf("i=%lld\n",i);
+				//				printf("i=%lld\n",i);
 				memcpy(pprev->buf+BUFLEN,b->buf,i+1);
 				i++;
 				//根据这个>判断上一个buffer最后一个BCS的类型
@@ -206,7 +194,7 @@ int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
 							pprev->bcsay.bcs[pprev->bcsay.bcsmax].bt=StartAndEnd;
 						}
 					}
-				//	if(*(pprev->buf+BUFLEN-1)=='<')
+					//	if(*(pprev->buf+BUFLEN-1)=='<')
 					else
 					{
 						if(b->buf[0]=='/')
@@ -233,7 +221,7 @@ int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
 	//解析小于号
 	for(;i<BUFLEN;i++){
 		if(b->buf[i] == '<'){ 
-			
+
 			//Etag_start
 			if(b->buf[i+1] == '/'){
 				if(n<=BCSLEN){
@@ -248,7 +236,7 @@ int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
 					return -1;
 				}
 			}
-			
+
 			//PI_start
 			else if(b->buf[i+1] == '?'){
 				j=i;
@@ -334,7 +322,7 @@ int identify(Buffer *b){  //第一阶段判别一个Buffer中的全部'<'位置
 					if(b->buf[i]=='>')
 					{
 						if(b->buf[i-1]=='/')
-							st=1;
+						  st=1;
 						break;
 					}
 				}

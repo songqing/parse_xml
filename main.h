@@ -18,30 +18,54 @@
 typedef unsigned long long ull;
 extern ull bufnummber;
 
+//信号量
+//sem_t num_buffer_product;
+//sem_t num_buffer_consume;
+//sem_t mutex;
+
+//BCS类型
 typedef enum Bcstype{
-      StagorEmptytag_start,
-      Etag_start,
-      PI_start,
-      Content,
-      CDSECT_start,
-      COMMENT_start,
-	  StartAndEnd
+	StagorEmptytag_start,
+	Etag_start,
+	PI_start,
+	Content,
+	CDSECT_start,
+	COMMENT_start,
+	StartAndEnd
 } Bcstype;
 
+//BCS内容
 typedef struct bcs_t{
-     ull fileoffset;
-     ull bufnum;
-     ull bufpos;
-     Bcstype bt;
+	ull fileoffset;
+	ull bufnum;
+	ull bufpos;
+	Bcstype bt;
 }Bcs;
 
+//每个Buffer中含有的BCS数组
 typedef struct Bcsarray_t{
 	Bcs bcs[BCSLEN];
 	ull bcsmax;
 }Bcsarray;
 
 
+//栈中元素类型
+typedef struct StackType
+{
+	Bcstype bt;
+	char* startpos;  //起始地址
+	int len;
+}StackType;
 
+//顺序栈，用来匹配每个buffer中的<标签
+typedef struct SqStack
+{
+	StackType *base;
+	StackType *top;
+	int stacksize;
+}SqStack;
+
+//Buffer内容
 typedef struct Buffer_t{
 	//pthread_mutex_t lock;
 	char buf[BUFLEN+1024];
@@ -53,9 +77,11 @@ typedef struct Buffer_t{
 	int FINISH_STAGE3;
 	int START_STAGE2;
 	int START_STAGE3;
+	SqStack* stack;
 	struct	Buffer_t  *next;
 }Buffer;
 
+extern SqStack * step3stack;
 extern Buffer *start,*pbuffer,*pprev;
 
 //int read(char *name,Buffer *buffer);
@@ -75,6 +101,10 @@ void* handle1(void* args);  //线程1，解析ｘｍｌ文件
 
 //第二阶段匹配buffer中的标签
 void BufferMatch(Buffer*);
+//第二阶段，多线程处理
+void BufferMatchMultiThread();
 //第三阶段处理全局栈
 //int HandleStack(Sq)
+//step3,将ｓｔｅｐ2中ｂｕｆｆｅｒ中剩余的标签放入全局栈中
+void BCSLeftHanlde(Buffer*);
 #endif

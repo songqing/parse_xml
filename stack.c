@@ -4,15 +4,15 @@
 //static StackType elem;
 int InitStack(SqStack *S)
 {
-/*
-	S=NULL;
-	S=(SqStack*)malloc(sizeof(SqStack));
-	if(!S)
-	{
-		printf("init stack failed!\n");
-		return 0;
-	}
-*/
+	/*
+	   S=NULL;
+	   S=(SqStack*)malloc(sizeof(SqStack));
+	   if(!S)
+	   {
+	   printf("init stack failed!\n");
+	   return 0;
+	   }
+	   */
 	S->base=(StackType*)malloc(STACKLEN*sizeof(StackType));
 	if(!S->base)
 	{
@@ -27,9 +27,9 @@ int DestroyStack(SqStack *S)
 {
 	if(S!=NULL)
 	  free(S->base);
-//	S->base=S->top=NULL;
-//	S->stacksize=0;
-//	free(S);
+	//	S->base=S->top=NULL;
+	//	S->stacksize=0;
+	//	free(S);
 	//S=NULL;
 
 	return 1;
@@ -38,10 +38,10 @@ int DestroyStack(SqStack *S)
 
 StackType GetTop(SqStack *S)
 {
-//	StackType *e=(StackType*)malloc(sizeof(StackType));
+	//	StackType *e=(StackType*)malloc(sizeof(StackType));
 	//if(S->top==S->base) return NULL;
 	return *(S->top-1);
-//	return 1;
+	//	return 1;
 }
 
 int Push(SqStack *S,StackType e)

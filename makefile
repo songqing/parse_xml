@@ -1,7 +1,7 @@
 CC = gcc
-CFLAGS = -g -Wall -lpthread -O3 
+CFLAGS = -g -Wall -O3 -lpthread 
 main:main.o step1.o stack.o step2.o step3.o
-	$(CC) main.o step1.o stack.o step2.o step3.o -O3 -o main
+	$(CC) main.o step1.o stack.o step2.o step3.o -O3 -o main -lpthread
 main.o:main.c
 	$(CC) $(CFLAGS) -c main.c -o main.o
 step1.o:step1.c
